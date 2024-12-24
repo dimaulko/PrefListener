@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <queries>
+        <intent>
+            <action android:name="com.uds_improveit.preflistener.action.CONNECT" />
+        </intent>
+    </queries>
+
+    <application>
+        <receiver
+            android:name=".SocketConnectionRunnerBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:label="Socket run listener">
+            <intent-filter>
+                <action android:name="com.uds_improveit.preflistener.action.CONNECT" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
