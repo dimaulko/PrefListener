@@ -7,6 +7,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.util.Log
+import com.uds_improveit.preflistener.Logger.logD
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,22 +25,18 @@ class NetworkMonitoringUtil(context: Context) : NetworkCallback() {
 
     override fun onAvailable(network: Network) {
         super.onAvailable(network)
-        Log.d("NetworkMonitoringUtil", "onAvailable() called: Connected to network")
+        logD("NetworkMonitoringUtil onAvailable() called: Connected to network")
         _networkState.value = true
     }
 
     override fun onLost(network: Network) {
         super.onLost(network)
-        Log.e("NetworkMonitoringUtil", "onLost() called: Lost network connection")
+        logD("NetworkMonitoringUtil onLost() called: Lost network connection")
         _networkState.value = false
     }
 
-    /**
-     * Registers the Network-Request callback
-     * (Note: Register only once to prevent duplicate callbacks)
-     */
     fun registerNetworkCallbackEvents() {
-        Log.d("NetworkMonitoringUtil", "registerNetworkCallbackEvents() called")
+        logD("NetworkMonitoringUtil registerNetworkCallbackEvents() called")
         mConnectivityManager.registerNetworkCallback(mNetworkRequest, this)
     }
 

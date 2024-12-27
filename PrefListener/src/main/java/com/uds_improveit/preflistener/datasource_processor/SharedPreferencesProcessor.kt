@@ -3,6 +3,7 @@ package com.uds_improveit.preflistener.datasource_processor
 import android.content.Context
 import android.content.SharedPreferences
 import com.uds_improveit.preflistener.Builder
+import com.uds_improveit.preflistener.Logger.logD
 import kotlinx.coroutines.CoroutineScope
 
 object SharedPreferencesProcessor : DataHandlerProcessor {
@@ -14,12 +15,12 @@ object SharedPreferencesProcessor : DataHandlerProcessor {
     fun setSourceFileName(context: Context, filename: String) {
 
         if (filename.isBlank()) {
-            println("Filename can't be empty")
+            logD("Filename can't be empty")
             return
         }
 
         if (mapSharedPreferences.contains(filename)) {
-            println("Always listened")
+            logD("Always listened")
             return
         }
 
@@ -30,7 +31,7 @@ object SharedPreferencesProcessor : DataHandlerProcessor {
             it.registerOnSharedPreferenceChangeListener(
                 prefListener
             )
-            println("register listener for filename: $filename")
+            logD("register listener for filename: $filename")
             mapSharedPreferences[filename] = it
         }
     }
@@ -72,7 +73,7 @@ object SharedPreferencesProcessor : DataHandlerProcessor {
         override fun onSharedPreferenceChanged(
             sharedPreferences: SharedPreferences, key: String?
         ) {
-            println("PrefLoaderSharedPreferencesListener: onSharedPreferenceChanged")
+            logD("PrefLoaderSharedPreferencesListener: onSharedPreferenceChanged")
             sharedPreferences?.let {
                 buildAndSendPrefData(
                     pref = it, key = key, sourceName = sourceName, false

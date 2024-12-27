@@ -5,7 +5,6 @@ import android.content.pm.ApplicationInfo
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.uds_improveit.preflistener.Logger.logD
-import com.uds_improveit.preflistener.Logger.logW
 import com.uds_improveit.preflistener.datasource_processor.DataSourceProcessor
 import com.uds_improveit.preflistener.datasource_processor.SharedPreferencesProcessor
 import com.uds_improveit.preflistener.sql.DataUpdateEvent
@@ -33,6 +32,11 @@ object PrefListener {
     private var sdkInited = false
     private var deviceID: String = ""
     private var connectionIP: String = ""
+    private val mDelay = if (development) {
+        1500L
+    } else {
+        4L
+    }
 
     private var prefUtil: PrefUtil? = null
 
@@ -40,7 +44,7 @@ object PrefListener {
     private var executor = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val scope =
         CoroutineScope(SupervisorJob() + executor + CoroutineExceptionHandler { _, exception ->
-            println(exception.stackTraceToString())
+            logD(exception.stackTraceToString())
         })
 
     //--- App var's
@@ -63,7 +67,7 @@ object PrefListener {
     ) {
 
         if (sdkInited) {
-            logD("You can't reInit PrefListener")
+            logD("PrefListener inited")
             return
         }
 
@@ -81,7 +85,7 @@ object PrefListener {
 
         scope.launch {
             networkStateHolder?.networkState?.collectLatest { isConnected ->
-                logW("Network state ${isConnected}")
+                logD("Network state ${isConnected}")
                 if (isConnected) {
                     connectFromNetworkStateChange()
                 }
@@ -105,7 +109,7 @@ object PrefListener {
                 ) { dataList, networkState ->
                     dataList to networkState
                 }.collect { data ->
-                    println("distinctUntilChanged:  ${data}")
+                    logD("distinctUntilChanged:  ${data}")
                     data.first?.let { it ->
                         if (sendMessageNativeThread(it.toDTO())) {
                             deleteEventFromDB(it)
@@ -119,10 +123,9 @@ object PrefListener {
     }
 
 
-
     private fun deleteEventFromDB(event: DataUpdateEvent) {
         scope.launch {
-            delay(1500)
+            delay(mDelay)
             database?.userDao()?.deleteEvent(event)
         }
     }
@@ -158,21 +161,21 @@ object PrefListener {
     private fun runSocket() {
 
         if (deviceID.isEmpty()) {
-            logW("connectFromNetworkStateChange deviceID is empty")
+            logD("connectFromNetworkStateChange deviceID is empty")
             return
         }
 
         if (connectionIP.isEmpty()) {
-            logW("IP is empty, can't run socket")
+            logD("IP is empty, can't run socket")
             return
         }
 
         if (networkStateHolder?.checkNetworkState() == false) {
-            Logger.logD("startSocket: networkStatus ${networkStateHolder?.networkState?.value} return")
+            logD("startSocket: networkStatus ${networkStateHolder?.networkState?.value} return")
             return
         }
 
-        NativeSocket.createSocket(connectionIP, PORT, ::logW) {
+        NativeSocket.createSocket(connectionIP, PORT, ::logD) {
             logD("startSocket: Socket is starting")
         }
     }
@@ -202,20 +205,17 @@ object PrefListener {
         }
 
         scope.launch {
-//            (0..5).forEach {
-                database?.userDao()?.insertEvent(
-                    DataUpdateEvent(
-                        id = null,
-                        sourceName = message.sourceName,
-                        sourceType = message.source,
-                        data = message.data.toString(),
-                        timestamp = message.timestamp,
-                        reConnection = false
-                    )
+            database?.userDao()?.insertEvent(
+                DataUpdateEvent(
+                    id = null,
+                    sourceName = message.sourceName,
+                    sourceType = message.source,
+                    data = message.data.toString(),
+                    timestamp = message.timestamp,
+                    reConnection = false
                 )
-            }
-//        }
+            )
+        }
     }
-
 
 }

@@ -2,8 +2,6 @@ package com.uds_improveit.preflistener
 
 import android.util.Log
 
-
-
 object Logger {
 
     private const val TAG = "PrefListener"
@@ -19,6 +17,5 @@ object Logger {
             Log.w(TAG, message)
         }
     }
-
 
 }

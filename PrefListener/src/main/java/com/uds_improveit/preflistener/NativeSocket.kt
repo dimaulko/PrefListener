@@ -1,5 +1,6 @@
 package com.uds_improveit.preflistener
 
+import com.uds_improveit.preflistener.Logger.logD
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.BufferedReader
@@ -55,7 +56,7 @@ object NativeSocket {
             } catch (e: Exception) {
                 socket = null
                 _socketState.tryEmit(SocketState.ERROR)
-                println(e.stackTraceToString())
+                logD(e.stackTraceToString())
             }
         }
         logger("end socket creation")
@@ -70,8 +71,8 @@ object NativeSocket {
             socketThread = null
         } catch (e: Exception) {
 
-            println("Stop socket/thread exception")
-            println("Exception: ${e.stackTraceToString()}")
+            logD("Stop socket/thread exception")
+            logD("Exception: ${e.stackTraceToString()}")
         } finally {
             _socketState.tryEmit(SocketState.CLOSED)
         }
@@ -80,7 +81,7 @@ object NativeSocket {
     fun sendMessage(message: String): Boolean {
         try {
             if (outputStream == null) {
-                Logger.logW("-----NativeSocket sendMessage outputStream is null-----")
+                logD("-----NativeSocket sendMessage outputStream is null-----")
                 return false
             }
             outputStream?.let {
@@ -88,11 +89,11 @@ object NativeSocket {
                 val bufferedWriter = BufferedWriter(outputStreamWriter)
                 bufferedWriter.write(message.plus("\n"))
                 bufferedWriter.flush()
-                Logger.logW("-----NativeSocket sendMessage message sent-----")
+                logD("-----NativeSocket sendMessage message sent-----")
                 return true
             }
         } catch (e: Exception) {
-            println(e.stackTraceToString())
+            logD(e.stackTraceToString())
         }
         return false
     }

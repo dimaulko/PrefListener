@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.uds_improveit.preflistener.Builder
+import com.uds_improveit.preflistener.Logger.logD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.map
@@ -27,28 +28,28 @@ object DataSourceProcessor : DataHandlerProcessor {
     internal fun setDataStore(datastore: DataStore<Preferences>, aliasSourceName: String) {
 
         if (aliasSourceName.isBlank()) {
-            println("AliasSourceName is empty")
+            logD("AliasSourceName is empty")
             return
         }
 
         if (dataStoreNamesMap.containsValue(value = aliasSourceName)) {
-            println("Key: ${aliasSourceName} used, skip adding")
+            logD("Key: ${aliasSourceName} used, skip adding")
             return
         }
 
         if (dataStoreNamesMap.containsKey(key = datastore)) {
-            println("Datastore: ${datastore} used, skip adding")
+            logD("Datastore: ${datastore} used, skip adding")
             return
         }
 
         dataStoreNamesMap[datastore] = aliasSourceName
-        println("Datastore: Alias ${prefLoaderDataStoreIdentifierPrefix + aliasSourceName}")
+        logD("Datastore: Alias ${prefLoaderDataStoreIdentifierPrefix + aliasSourceName}")
         dataStoreValuesMap[prefLoaderDataStoreIdentifierPrefix + aliasSourceName] = mutableMapOf()
 
         coroutineScope?.launch {
             datastore.data.map { it }.collect { pref ->
                 if (pref.asMap().isEmpty()) {
-                    println("map Is Empty")
+                    logD("map Is Empty")
                 }
 
                 buildAndSendPrefData(pref, false)
@@ -66,7 +67,7 @@ object DataSourceProcessor : DataHandlerProcessor {
 
         coroutineScope?.launch {
             datastore.data.map { it }.collect { pref ->
-                println("Datastore: ${datastore} used, skip adding")
+                logD("Datastore: ${datastore} used, skip adding")
                 buildAndSendPrefData(pref, false)
             }
         }
@@ -93,7 +94,7 @@ object DataSourceProcessor : DataHandlerProcessor {
 
         // calculation
 
-        println("Datastore: Alias2 ${sourceName}")
+        logD("Datastore: Alias2 ${sourceName}")
         val prevMap = dataStoreValuesMap[sourceName]!!.toMutableMap()
         val currentMap = pref.asMap()
 
@@ -110,15 +111,15 @@ object DataSourceProcessor : DataHandlerProcessor {
             } else if (prevMap[key] != currentMap[key]) {
                 edited[key] = currentMap[key]
             } else {
-                println("Diff ___ unexprected: ${prevMap[key] == currentMap[key]}")
+                logD("Diff ___ unexprected: ${prevMap[key] == currentMap[key]}")
             }
         }
 
-        println("Diff ___pref: ${prevMap}")
-        println("Diff ___currentMap: ${currentMap}")
-        println("Diff ___deleted: ${deleted}")
-        println("Diff ___added: ${added}")
-        println("Diff ___edited: ${edited}")
+        logD("Diff ___pref: ${prevMap}")
+        logD("Diff ___currentMap: ${currentMap}")
+        logD("Diff ___deleted: ${deleted}")
+        logD("Diff ___added: ${added}")
+        logD("Diff ___edited: ${edited}")
 
         dataStoreValuesMap[sourceName] = pref.asMap().toMutableMap()
 
@@ -138,7 +139,6 @@ object DataSourceProcessor : DataHandlerProcessor {
         }.build()
 
         onDataUpdate?.invoke(message1)
-
 
     }
 
