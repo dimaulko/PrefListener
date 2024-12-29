@@ -12,10 +12,4 @@ object Logger {
         }
     }
 
-    fun logW(message: String) {
-        if (PrefListener.isDebuggable) {
-            Log.w(TAG, message)
-        }
-    }
-
 }

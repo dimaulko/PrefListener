@@ -30,4 +30,3 @@ class SocketConnectionRunnerBroadcastReceiver : BroadcastReceiver() {
         super.setResult(Activity.RESULT_OK, null /* data */, null /* extra */)
     }
 }
-

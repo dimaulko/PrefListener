@@ -8,7 +8,7 @@ import com.uds_improveit.preflistener.Logger.logD
 import com.uds_improveit.preflistener.datasource_processor.DataSourceProcessor
 import com.uds_improveit.preflistener.datasource_processor.SharedPreferencesProcessor
 import com.uds_improveit.preflistener.sql.DataUpdateEvent
-import com.uds_improveit.preflistener.sql.PrefLoaderDatabase
+import com.uds_improveit.preflistener.sql.PrefListenerDatabase
 import com.uds_improveit.preflistener.sql.toDTO
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -24,7 +24,7 @@ import kotlinx.serialization.json.Json
 import java.util.concurrent.Executors
 
 const val PORT = 55690
-const val development = true
+const val development = false
 
 object PrefListener {
 
@@ -47,7 +47,7 @@ object PrefListener {
             logD(exception.stackTraceToString())
         })
 
-    //--- App var's
+    //--- App vars
     private var appContext: Context? = null
     val isDebuggable: Boolean
         get() {
@@ -60,7 +60,7 @@ object PrefListener {
 
 
     // database
-    private var database: PrefLoaderDatabase? = null
+    private var database: PrefListenerDatabase? = null
 
     fun init(
         _context: Context
@@ -74,7 +74,7 @@ object PrefListener {
         this.appContext = _context.applicationContext
         this.prefUtil = PrefUtil(_context)
 
-        database = PrefLoaderDatabase.getDatabase(_context)
+        database = PrefListenerDatabase.getDatabase(_context)
 
         networkStateHolder = NetworkMonitoringUtil(appContext!!).apply {
             registerNetworkCallbackEvents()
@@ -102,17 +102,17 @@ object PrefListener {
 
         scope.launch {
 
-            database?.let { _database ->
+            database?.let { db ->
                 combine(
-                    _database.userDao().getLastEvent().distinctUntilChanged(),
+                    db.dataDao().getLastEvent().distinctUntilChanged(),
                     NativeSocket.socketState
                 ) { dataList, networkState ->
                     dataList to networkState
                 }.collect { data ->
                     logD("distinctUntilChanged:  ${data}")
-                    data.first?.let { it ->
-                        if (sendMessageNativeThread(it.toDTO())) {
-                            deleteEventFromDB(it)
+                    data.first?.let { item ->
+                        if (sendMessageNativeThread(item.toDTO())) {
+                            deleteEventFromDB(item)
                         }
                     }
                 }
@@ -126,7 +126,7 @@ object PrefListener {
     private fun deleteEventFromDB(event: DataUpdateEvent) {
         scope.launch {
             delay(mDelay)
-            database?.userDao()?.deleteEvent(event)
+            database?.dataDao()?.deleteEvent(event)
         }
     }
 
@@ -175,7 +175,7 @@ object PrefListener {
             return
         }
 
-        NativeSocket.createSocket(connectionIP, PORT, ::logD) {
+        NativeSocket.createSocket(connectionIP, PORT) {
             logD("startSocket: Socket is starting")
         }
     }
@@ -205,7 +205,7 @@ object PrefListener {
         }
 
         scope.launch {
-            database?.userDao()?.insertEvent(
+            database?.dataDao()?.insertEvent(
                 DataUpdateEvent(
                     id = null,
                     sourceName = message.sourceName,
@@ -217,5 +217,4 @@ object PrefListener {
             )
         }
     }
-
 }

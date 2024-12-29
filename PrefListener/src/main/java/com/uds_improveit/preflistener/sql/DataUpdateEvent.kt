@@ -28,9 +28,7 @@ data class DataUpdateEvent(
 
 fun DataUpdateEvent.toDTO(): UpdatesObject {
     val message = Builder(
-        source = sourceType,
-        sourceName = sourceName,
-        reConnection = reConnection
+        source = sourceType, sourceName = sourceName, reConnection = reConnection
     ).also { builder ->
         Json.decodeFromString<ArrayList<UpdatesObject.PrefField>>(data)
             .forEach { builder.putValue(it.keyName, it.value, it.valueType) }
@@ -42,31 +40,30 @@ fun DataUpdateEvent.toDTO(): UpdatesObject {
 @Dao
 interface DataUpdateDao {
     @Insert
-    suspend fun insertEvent(user: DataUpdateEvent)
+    suspend fun insertEvent(event: DataUpdateEvent)
 
     @Query("SELECT * FROM event ORDER BY timestamp ASC LIMIT 1")
     fun getLastEvent(): Flow<DataUpdateEvent?>
 
     @Delete
-    fun deleteEvent(user: DataUpdateEvent)
+    fun deleteEvent(event: DataUpdateEvent)
 }
 
 @Database(entities = [DataUpdateEvent::class], version = 1, exportSchema = false)
-abstract class PrefLoaderDatabase : RoomDatabase() {
-    abstract fun userDao(): DataUpdateDao
+abstract class PrefListenerDatabase : RoomDatabase() {
+    abstract fun dataDao(): DataUpdateDao
 
     companion object {
         @Volatile
-        private var INSTANCE: PrefLoaderDatabase? = null
+        private var INSTANCE: PrefListenerDatabase? = null
 
-        fun getDatabase(context: Context): PrefLoaderDatabase {
+        fun getDatabase(context: Context): PrefListenerDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    PrefLoaderDatabase::class.java,
+                    PrefListenerDatabase::class.java,
                     "pref_history_database"
-                ).fallbackToDestructiveMigration()
-                    .build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

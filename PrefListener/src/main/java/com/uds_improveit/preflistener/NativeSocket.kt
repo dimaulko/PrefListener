@@ -23,35 +23,29 @@ object NativeSocket {
     val socketState = _socketState.asStateFlow()
 
     fun createSocket(
-        ip: String, port: Int, logger: (String) -> Unit, listener: () -> Unit
+        ip: String, port: Int, listener: () -> Unit
     ): Socket? {
         if (_socketState.value in listOf(SocketState.CONNECTING, SocketState.CONNECTED)) {
-            logger("socketState: ${socketState}, return")
+//            logD("socketState: ${socketState}, return")
             return null
         }
 
         onSocketCreated = listener
-        logger("start socket creating")
+//        logD("start socket creating")
         socketThread = thread {
             try {
                 _socketState.tryEmit(SocketState.CONNECTING)
                 socket = Socket(ip, port)
                 outputStream = socket!!.getOutputStream()
                 inputStream = socket!!.getInputStream()
-                logger("Socket created")
+//                logD("Socket created")
                 _socketState.tryEmit(SocketState.CONNECTED)
                 onSocketCreated.invoke()
                 while (true) {
                     val inputStreamReader = InputStreamReader(inputStream)
                     val bufferedReader = BufferedReader(inputStreamReader)
                     val Response = bufferedReader.readLine()
-                    logger("Response: $Response")
-                    val ResponseArray =
-                        Response.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
-                    ResponseArray.withIndex().forEach {
-                        logger("Index ${it.index}, value ${it.value}")
-                    }
                 }
             } catch (e: Exception) {
                 socket = null
@@ -59,7 +53,7 @@ object NativeSocket {
                 logD(e.stackTraceToString())
             }
         }
-        logger("end socket creation")
+//        logD("end socket creation")
         return socket
     }
 
@@ -71,8 +65,8 @@ object NativeSocket {
             socketThread = null
         } catch (e: Exception) {
 
-            logD("Stop socket/thread exception")
-            logD("Exception: ${e.stackTraceToString()}")
+//            logD("Stop socket/thread exception")
+//            logD("Exception: ${e.stackTraceToString()}")
         } finally {
             _socketState.tryEmit(SocketState.CLOSED)
         }
@@ -89,11 +83,11 @@ object NativeSocket {
                 val bufferedWriter = BufferedWriter(outputStreamWriter)
                 bufferedWriter.write(message.plus("\n"))
                 bufferedWriter.flush()
-                logD("-----NativeSocket sendMessage message sent-----")
+//                logD("-----NativeSocket sendMessage message sent-----")
                 return true
             }
         } catch (e: Exception) {
-            logD(e.stackTraceToString())
+//            logD(e.stackTraceToString())
         }
         return false
     }
